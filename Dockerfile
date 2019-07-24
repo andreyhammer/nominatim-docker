@@ -6,6 +6,7 @@ ENV LANG=C.UTF-8
 #Countries list in geofabrik format: "europe/monaco europe/malta", one or multiple countires
 ENV NOMINATIM_COUNTRIES="europe/monaco europe/malta"
 ENV NOMINATIM_INIT_THREADS=8
+ENV NOMINATIM_INIT_CACHE=16000
 
 #Install packages
 RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections && \
@@ -77,7 +78,7 @@ EXPOSE 80
 
 COPY default.conf /etc/nginx/conf.d/default.conf
 COPY fastcgi_params /etc/nginx/fastcgi_params
-
+COPY local.php /app/src/build/settings/local.php
 COPY init.sh /app/init.sh
 COPY start.sh /app/start.sh
 COPY update.sh /app/update.sh

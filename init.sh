@@ -49,7 +49,11 @@ else
     mv $DATA_DIR/*$COUNTRY_POSTFIX $DATA_DIR/merged.osm.pbf
 fi
 
-#Init postgres database and populate database
+#Set postgresql settings for init process
+echo "fsync = off" >> $PG_CONF
+echo "full_page_writes = off" >> $PG_CONF
+
+#Init postgresql database and populate database
 mkdir -p $PG_DATA
 chown postgres:postgres $PG_DATA
 
@@ -59,9 +63,15 @@ sudo -u postgres createuser -s nominatim && \
 sudo -u postgres createuser -SDR www-data && \
 useradd -r nominatim
 chown -R nominatim:nominatim ./src && \
-sudo -u nominatim ./src/build/utils/setup.php --osm-file $DATA_DIR/merged.osm.pbf --all --threads $NOMINATIM_INIT_THREADS &&\
+mkdir $DATA_DIR/nominatim && \
+chown nominatim:nominatim $DATA_DIR/nominatim && \
+sudo -u nominatim ./src/build/utils/setup.php --osm-file $DATA_DIR/merged.osm.pbf --all --threads $NOMINATIM_INIT_THREADS --osm2pgsql-cache $NOMINATIM_INIT_CACHE && \
 sleep 10 && \
 sudo -u postgres /usr/lib/postgresql/11/bin/pg_ctl -D $PG_DATA -o "--config_file=$PG_CONF" stop
+
+#Remove posgresql
+sed -i '|^fsync = off|d' $PG_CONF
+sed -i '|^full_page_writes = off|d' $PG_CONF
 
 #Set countries for update
 sed "s|^COUNTRIES=.*|COUNTRIES=\"$NOMINATIM_COUNTRIES\"|g" /app/update.sh > $DATA_DIR/update.sh
