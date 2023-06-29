@@ -62,7 +62,7 @@ RUN echo "shared_buffers = $PG_SHARED_BUFFERS" >> $PG_CONF && \
     rm -rf /var/lib/postgresql/14/main
 
 #nominatim build args
-ARG NOMINATIM_GIT_TAG=v4.2.3
+ARG NOMINATIM_GIT_TAG=v3.3.0
 ARG BUILD_JOBS=6
 
 #Build nominatim
