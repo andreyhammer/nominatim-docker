@@ -1,4 +1,4 @@
-FROM debian:stretch
+FROM debian:bullseye-slim
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG=C.UTF-8
@@ -18,11 +18,11 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
     curl -fsSL https://nginx.org/keys/nginx_signing.key | sudo apt-key add - && \
     curl -fsSL https://packages.sury.org/php/apt.gpg | sudo apt-key add - && \
     curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add - && \
-    apt-get update && apt-get install -y nginx php7.2-fpm php7.2 php7.2-pgsql php7.2-intl \
-    postgresql-11 postgresql-server-dev-11 postgresql-11-postgis-2.5 postgresql-contrib-11 \
+    apt-get update && apt-get install -y nginx php7.4-fpm php7.4 php7.4-pgsql php7.4-intl \
+    postgresql-14 postgresql-server-dev-14 postgresql-14-postgis-3 postgresql-contrib-14 \
     build-essential cmake g++ libboost-dev libboost-system-dev libboost-filesystem-dev \
     libexpat1-dev zlib1g-dev libxml2-dev libbz2-dev libpq-dev libproj-dev \
-    python3-pip libboost-python-dev osmosis osmium-tool && \
+    python3-pip libboost-python-dev osmosis osmium-tool lua5.3  liblua5.3-dev && \
     apt-get clean && \
     pip3 install osmium && \
     rm -rf /var/lib/apt/lists/* && \
@@ -30,11 +30,11 @@ RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selectio
 
 #Configure nginx & php-fpm
 RUN sed -i 's|worker_processes  1|worker_processes  auto|g' /etc/nginx/nginx.conf && \
-    sed -i 's|^listen.owner =.*|listen.owner = nginx |g' /etc/php/7.2/fpm/pool.d/www.conf && \
-    sed -i 's|^listen.group =.*|listen.group = nginx |g' /etc/php/7.2/fpm/pool.d/www.conf
+    sed -i 's|^listen.owner =.*|listen.owner = nginx |g' /etc/php/7.4/fpm/pool.d/www.conf && \
+    sed -i 's|^listen.group =.*|listen.group = nginx |g' /etc/php/7.4/fpm/pool.d/www.conf
 
 #postgres default settings
-ARG PG_CONF=/etc/postgresql/11/main/postgresql.conf
+ARG PG_CONF=/etc/postgresql/14/main/postgresql.conf
 ARG PG_SHARED_BUFFERS=16GB
 ARG PG_EFFECTIVE_CACHE_SIZE=48GB
 ARG PG_MAINTENANCE_WORK_MEM=4GB
@@ -59,20 +59,18 @@ RUN echo "shared_buffers = $PG_SHARED_BUFFERS" >> $PG_CONF && \
     echo "max_worker_processes = $PG_WORKER_PROCESSES" >> $PG_CONF && \
     echo "max_parallel_workers_per_gather = $PG_PARALLEL_WORKERS_PER_GATHER" >> $PG_CONF && \
     echo "max_parallel_workers = $PG_PARALLEL_WORKERS" >> $PG_CONF && \
-    rm -rf /var/lib/postgresql/11/main
+    rm -rf /var/lib/postgresql/14/main
 
 #nominatim build args
-ARG NOMINATIM_GIT_TAG=v3.3.0
+ARG NOMINATIM_GIT_TAG=v4.2.3
 ARG BUILD_JOBS=6
 
 #Build nominatim
 WORKDIR /app
-RUN git clone --recursive https://github.com/openstreetmap/Nominatim ./src && \
+RUN git clone --recursive https://github.com/osm-search/Nominatim ./src && \
     cd ./src && git checkout tags/$NOMINATIM_GIT_TAG && git submodule update --recursive --init && \
+    curl https://www.nominatim.org/data/country_grid.sql.gz -o /app/src/data/country_osm_grid.sql.gz && \
     mkdir build && cd build && cmake .. && make -j $BUILD_JOBS
-
-#Load initial data
-RUN curl http://www.nominatim.org/data/country_grid.sql.gz -o /app/src/data/country_osm_grid.sql.gz
 
 EXPOSE 80
 
