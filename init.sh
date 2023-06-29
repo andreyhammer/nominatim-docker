@@ -4,8 +4,9 @@ GEOFABRIK_URL=http://download.geofabrik.de
 COUNTRY_POSTFIX=-latest.osm.pbf
 DATA_DIR=/data
 UPDATE_DIR=$DATA_DIR/update
-PG_DATA=/var/lib/postgresql/11/main
-PG_CONF=/etc/postgresql/11/main/postgresql.conf
+PG_BIN=/usr/lib/postgresql/14/bin
+PG_DATA=/var/lib/postgresql/14/main
+PG_CONF=/etc/postgresql/14/main/postgresql.conf
 
 #Download pbf if not exists
 for COUNTRY_ in $NOMINATIM_COUNTRIES
@@ -57,8 +58,8 @@ echo "full_page_writes = off" >> $PG_CONF
 mkdir -p $PG_DATA
 chown postgres:postgres $PG_DATA
 
-sudo -u postgres /usr/lib/postgresql/11/bin/initdb -D $PG_DATA && \
-sudo -u postgres /usr/lib/postgresql/11/bin/pg_ctl -D $PG_DATA -o "--config_file=$PG_CONF" start && \
+sudo -u postgres $PG_BIN/initdb -D $PG_DATA && \
+sudo -u postgres $PG_BIN/pg_ctl -D $PG_DATA -o "--config_file=$PG_CONF" start && \
 sudo -u postgres createuser -s nominatim && \
 sudo -u postgres createuser -SDR www-data && \
 useradd -r nominatim
@@ -67,7 +68,7 @@ mkdir $DATA_DIR/nominatim && \
 chown nominatim:nominatim $DATA_DIR/nominatim && \
 sudo -u nominatim ./src/build/utils/setup.php --osm-file $DATA_DIR/merged.osm.pbf --all --threads $NOMINATIM_INIT_THREADS --osm2pgsql-cache $NOMINATIM_INIT_CACHE && \
 sleep 10 && \
-sudo -u postgres /usr/lib/postgresql/11/bin/pg_ctl -D $PG_DATA -o "--config_file=$PG_CONF" stop
+sudo -u postgres$PG_BIN/pg_ctl -D $PG_DATA -o "--config_file=$PG_CONF" stop
 
 #Remove posgresql
 sed -i '|^fsync = off|d' $PG_CONF

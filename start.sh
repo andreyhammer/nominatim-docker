@@ -2,7 +2,7 @@
 
 service nginx start
 service postgresql start
-service php7.2-fpm start
+service php7.4-fpm start
 
-tail -f /var/log/nginx/*log /var/log/postgresql/postgresql-11-main.log /var/log/php7.2-fpm.log
+tail -f /var/log/nginx/*log /var/log/postgresql/postgresql-14-main.log /var/log/php7.4-fpm.log
 
